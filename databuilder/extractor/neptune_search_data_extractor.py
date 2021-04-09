@@ -66,7 +66,7 @@ def _table_search_query(graph: GraphTraversalSource, tag_filter: str) -> List[Di
         __.constant('')
     ))  # schema_description
     traversal = traversal.by('name')  # name
-    traversal = traversal.by(T.id)  # key
+    traversal = traversal.by('key')  # key
     traversal = traversal.by(__.coalesce(
         __.out(DescriptionMetadata.DESCRIPTION_RELATION_TYPE).values('description'),
         __.constant('')
@@ -195,7 +195,7 @@ def _dashboard_search_query(graph: GraphTraversalSource, tag_filter: str) -> Lis
     traversal = traversal.by(
         __.coalesce(
             __.out('EXECUTED').has('key', TextP.endingWith('_last_successful_execution')).values('timestamp'),
-            __.constant('')
+            __.constant(0)
         )
     )  # last_successful_run_timestamp
     traversal = traversal.by(
@@ -211,10 +211,10 @@ def _dashboard_search_query(graph: GraphTraversalSource, tag_filter: str) -> Lis
         __.constant(0)
     ).sum())  # total_usage
     traversal = traversal.by(
-        __.out('TAGGED_BY').has('tag_type', 'default').values('keys').dedup().fold()
+        __.inE(TableMetadata.TAG_TABLE_RELATION_TYPE).outV().values(METADATA_KEY_PROPERTY_NAME).fold()
     )  # tags
     traversal = traversal.by(
-        __.out('HAS_BADGE').values('keys').dedup().fold()
+        __.out('HAS_BADGE').values('key').dedup().fold()
     )  # badges
 
     traversal = traversal.order().by(__.select('name'), Order.asc)
